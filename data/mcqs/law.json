@@ -1,0 +1,12 @@
+{
+  "law_1": [
+    {
+      "id": "law_1_1",
+      "question": "Minimum number of directors required in a public company?",
+      "options": ["2", "3", "5", "7"],
+      "correct_answer": 1,
+      "explanation": "Section 149(1) of Companies Act 2013 requires minimum 3 directors.",
+      "hint": "Check Companies Act 2013"
+    }
+  ]
+}
