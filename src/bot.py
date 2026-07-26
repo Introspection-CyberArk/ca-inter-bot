@@ -7,11 +7,16 @@ Version: 2.0
 """
 
 import os
+import sys
 import logging
 import random
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 
+# Add parent directory to path for imports
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# Telegram imports
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
@@ -23,17 +28,16 @@ from telegram.ext import (
     ConversationHandler
 )
 
-# Import local modules
-from config import Config
-from content import CAContent
-from database import Database
-from utils import (
-    format_message,
-    validate_input,
-    get_performance_level,
-    calculate_accuracy,
-    sanitize_text
-)
+# ==================== CONFIGURATION ====================
+class Config:
+    """Bot configuration"""
+    TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN', '8707473118:AAErmBRuzuU9JRR08mE4TNsGDGUWdHwVpxU')
+    DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///data/ca_bot.db')
+    ENVIRONMENT = os.getenv('ENVIRONMENT', 'production')
+    DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+    VERSION = "2.0"
+    CREATOR = "MeNgHeaNg"
+    POWERED_BY = "@Introspection007"
 
 # ==================== LOGGING ====================
 logging.basicConfig(
@@ -45,12 +49,284 @@ logger = logging.getLogger(__name__)
 # ==================== CONSTANTS ====================
 (SUBJECT, TOPIC, DOUBT_INPUT, TEST_MODE) = range(4)
 
-# ==================== MAIN BOT CLASS ====================
-class CABot:
-    """CA Intermediate Exam Bot - Main Class"""
+# ==================== CA CONTENT ====================
+class CAContent:
+    """Complete CA Intermediate content database"""
     
     def __init__(self):
-        """Initialize bot with content and database"""
+        self.subjects = {
+            'accounts': '📚 Accounting',
+            'law': '⚖️ Business Laws', 
+            'taxation': '💰 Taxation',
+            'costing': '📊 Cost & Management Accounting',
+            'audit': '📋 Auditing',
+            'fm_sm': '📑 Financial Management & Strategic Management'
+        }
+        
+        self.topics = {
+            'accounts': [
+                {'id': 'acc_1', 'name': 'Accounting Standards', 'emoji': '📖'},
+                {'id': 'acc_2', 'name': 'Company Accounts', 'emoji': '🏢'},
+                {'id': 'acc_3', 'name': 'Consolidation', 'emoji': '📊'},
+                {'id': 'acc_4', 'name': 'Partnership Accounts', 'emoji': '🤝'},
+                {'id': 'acc_5', 'name': 'Financial Statements', 'emoji': '📈'}
+            ],
+            'law': [
+                {'id': 'law_1', 'name': 'Company Law', 'emoji': '🏛️'},
+                {'id': 'law_2', 'name': 'Contract Law', 'emoji': '📜'},
+                {'id': 'law_3', 'name': 'Negotiable Instruments', 'emoji': '💳'},
+                {'id': 'law_4', 'name': 'LLP Law', 'emoji': '🤝'}
+            ],
+            'taxation': [
+                {'id': 'tax_1', 'name': 'Income Tax Basics', 'emoji': '💵'},
+                {'id': 'tax_2', 'name': 'TDS & TCS', 'emoji': '💰'},
+                {'id': 'tax_3', 'name': 'GST', 'emoji': '🛒'},
+                {'id': 'tax_4', 'name': 'Filing Returns', 'emoji': '📋'}
+            ],
+            'costing': [
+                {'id': 'cost_1', 'name': 'Cost Sheet', 'emoji': '📊'},
+                {'id': 'cost_2', 'name': 'BEP Analysis', 'emoji': '📈'},
+                {'id': 'cost_3', 'name': 'Standard Costing', 'emoji': '🎯'},
+                {'id': 'cost_4', 'name': 'Budgeting', 'emoji': '📅'}
+            ],
+            'audit': [
+                {'id': 'aud_1', 'name': 'Audit Planning', 'emoji': '📋'},
+                {'id': 'aud_2', 'name': 'Internal Audit', 'emoji': '🔍'},
+                {'id': 'aud_3', 'name': 'Statutory Audit', 'emoji': '✅'},
+                {'id': 'aud_4', 'name': 'Audit Report', 'emoji': '📄'}
+            ],
+            'fm_sm': [
+                {'id': 'fm_1', 'name': 'Financial Management', 'emoji': '💹'},
+                {'id': 'fm_2', 'name': 'Working Capital', 'emoji': '🔄'},
+                {'id': 'fm_3', 'name': 'Strategic Management', 'emoji': '🎯'},
+                {'id': 'fm_4', 'name': 'Corporate Governance', 'emoji': '🏢'}
+            ]
+        }
+        
+        self.mcqs = {
+            'acc_1': [
+                {
+                    'id': 'acc_1_1',
+                    'question': 'Which accounting standard deals with Property, Plant and Equipment?',
+                    'options': ['AS 10', 'AS 16', 'AS 7', 'AS 19'],
+                    'correct_answer': 0,
+                    'explanation': 'AS 10 deals with Property, Plant and Equipment. It covers depreciation and fixed assets.',
+                    'hint': 'Remember the standard numbers!'
+                },
+                {
+                    'id': 'acc_1_2',
+                    'question': 'What is the accounting treatment for Capital Reserve?',
+                    'options': [
+                        'Credited to Profit & Loss A/c',
+                        'Shown in Balance Sheet as liability',
+                        'Shown in Balance Sheet as Reserve & Surplus',
+                        'Transferred to general reserve'
+                    ],
+                    'correct_answer': 2,
+                    'explanation': 'Capital reserve is shown under Reserves & Surplus in the Balance Sheet. It cannot be used for dividend distribution.',
+                    'hint': 'Think about where reserves are shown in Balance Sheet'
+                },
+                {
+                    'id': 'acc_1_3',
+                    'question': 'Which method is used for consolidation of financial statements?',
+                    'options': [
+                        'Equity method',
+                        'Proportionate method',
+                        'Full consolidation method',
+                        'Cost method'
+                    ],
+                    'correct_answer': 2,
+                    'explanation': 'Full consolidation method is used where the parent company has control over the subsidiary.',
+                    'hint': 'Consider which method shows complete control'
+                }
+            ],
+            'law_1': [
+                {
+                    'id': 'law_1_1',
+                    'question': 'Minimum number of directors required in a public company?',
+                    'options': ['2', '3', '5', '7'],
+                    'correct_answer': 1,
+                    'explanation': 'Section 149(1) of Companies Act 2013 requires minimum 3 directors for a public company.',
+                    'hint': 'Check Companies Act 2013'
+                }
+            ],
+            'tax_1': [
+                {
+                    'id': 'tax_1_1',
+                    'question': 'Residential status of an individual is determined based on:',
+                    'options': [
+                        'Citizenship',
+                        'Domicile',
+                        'Physical presence in India',
+                        'All of the above'
+                    ],
+                    'correct_answer': 2,
+                    'explanation': 'Residential status depends on the number of days of physical presence in India, not citizenship.',
+                    'hint': 'Focus on physical presence'
+                }
+            ],
+            'cost_1': [
+                {
+                    'id': 'cost_1_1',
+                    'question': 'What is the formula for Break-Even Point in units?',
+                    'options': [
+                        'Fixed Costs / Contribution per unit',
+                        'Variable Costs / Contribution per unit',
+                        'Fixed Costs + Variable Costs',
+                        'Total Costs / Units'
+                    ],
+                    'correct_answer': 0,
+                    'explanation': 'Break-Even Point in units = Fixed Costs / Contribution per unit',
+                    'hint': 'BEP = FC / CM per unit'
+                }
+            ]
+        }
+    
+    def get_subjects(self):
+        return self.subjects
+    
+    def get_topics(self, subject_code):
+        return self.topics.get(subject_code, [])
+    
+    def get_mcqs(self, topic_id):
+        return self.mcqs.get(topic_id, [])
+    
+    def get_topic_name(self, topic_id):
+        for topics in self.topics.values():
+            for topic in topics:
+                if topic['id'] == topic_id:
+                    return topic['name']
+        return "Unknown Topic"
+    
+    def explain_concept(self, query):
+        query_lower = query.lower()
+        
+        if 'depreciation' in query_lower:
+            return """
+📘 **DEPRECIATION - COMPLETE EXPLANATION**
+
+**What is Depreciation?**
+Depreciation is the systematic allocation of the depreciable amount of an asset over its useful life.
+
+**🔑 Key Points:**
+• Applies to tangible fixed assets
+• Based on historical cost
+• Non-cash expense
+• Reduces book value
+
+**📊 Methods:**
+1. **Straight Line Method (SLM)** - Equal depreciation every year
+2. **Written Down Value (WDV)** - Higher depreciation in early years
+
+**💡 Example:**
+Company buys machinery for ₹1,00,000
+Useful life: 10 years
+Residual value: ₹10,000
+
+Annual Depreciation (SLM) = (1,00,000 - 10,000) / 10 = ₹9,000
+"""
+        elif 'gst' in query_lower:
+            return """
+📘 **GST - GOODS AND SERVICES TAX**
+
+**What is GST?**
+GST is a comprehensive indirect tax levied on supply of goods and services.
+
+**🏗️ Structure:**
+• **CGST** - Central GST
+• **SGST** - State GST  
+• **IGST** - Integrated GST
+
+**📊 GST Rates:**
+• 5% - Essential items
+• 12% - Standard goods
+• 18% - Most services
+• 28% - Luxury items
+"""
+        else:
+            return """
+📘 **CONCEPT EXPLANATION**
+
+I'll help you understand this CA Inter concept!
+
+**🔍 What is it?**
+This is an important topic in CA Intermediate syllabus.
+
+**🎯 How to Study:**
+1. Read from ICAI module
+2. Practice problems
+3. Attempt MCQs
+4. Revise regularly
+
+**📝 Need specific help?**
+Ask me targeted questions like:
+• "Explain depreciation with example"
+• "What is GST and how it works?"
+• "Tell me about Section 80C"
+"""
+    
+    def find_related_mcqs(self, query):
+        all_mcqs = []
+        for mcqs in self.mcqs.values():
+            all_mcqs.extend(mcqs)
+        
+        keywords = query.lower().split()
+        related = []
+        
+        for mcq in all_mcqs:
+            question_lower = mcq['question'].lower()
+            if any(k in question_lower for k in keywords[:3]):
+                related.append(mcq)
+                if len(related) >= 3:
+                    break
+        
+        return related
+
+# ==================== DATABASE (SIMPLE VERSION) ====================
+class Database:
+    """Simple database operations"""
+    
+    def __init__(self):
+        self.data_dir = "data"
+        os.makedirs(self.data_dir, exist_ok=True)
+        self.db_file = os.path.join(self.data_dir, "ca_bot.db")
+    
+    def save_user(self, telegram_id, username, first_name, last_name=""):
+        pass
+    
+    def save_mcq_attempt(self, user_id, topic_id, mcq_id, selected, correct):
+        pass
+    
+    def save_doubt(self, user_id, question, response):
+        pass
+    
+    def get_user_stats(self, user_id):
+        return {'total_questions': 0, 'total_correct': 0, 'total_wrong': 0, 'accuracy': 0}
+
+# ==================== UTILITY FUNCTIONS ====================
+def calculate_accuracy(correct, total):
+    if total == 0:
+        return 0.0
+    return (correct / total) * 100
+
+def get_performance_level(accuracy):
+    if accuracy >= 80:
+        return "🌟 EXCELLENT! You're a CA star!"
+    elif accuracy >= 60:
+        return "👍 GOOD! Keep practicing!"
+    elif accuracy >= 40:
+        return "📖 NEEDS IMPROVEMENT. Review concepts."
+    else:
+        return "💪 DON'T GIVE UP! Practice more!"
+
+def validate_input(text, max_length=1000):
+    if not text or len(text) > max_length:
+        return False
+    return True
+
+# ==================== MAIN BOT CLASS ====================
+class CABot:
+    def __init__(self):
         self.content = CAContent()
         self.db = Database()
         self.user_sessions = {}
@@ -58,19 +334,9 @@ class CABot:
         self.CREATOR = Config.CREATOR
         self.POWERED_BY = Config.POWERED_BY
         
-    async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Start command - Show welcome message with credits"""
+    async def start(self, update, context):
         user = update.effective_user
         
-        # Save user to database
-        self.db.save_user(
-            telegram_id=str(user.id),
-            username=user.username or "Unknown",
-            first_name=user.first_name or "User",
-            last_name=user.last_name or ""
-        )
-        
-        # Initialize user session
         self.user_sessions[user.id] = {
             'current_subject': None,
             'current_topic': None,
@@ -79,12 +345,7 @@ class CABot:
             'total': 0,
             'mcqs': [],
             'current_mcq': 0,
-            'history': [],
-            'started_at': datetime.now().isoformat(),
-            'test_mcqs': [],
-            'test_index': 0,
-            'test_score': 0,
-            'test_total': 0
+            'history': []
         }
         
         welcome = f"""
@@ -99,15 +360,12 @@ I'm your CA Intermediate exam preparation assistant.
 • 💡 Concept Understanding
 • 📊 Progress Tracking
 • 🎯 Weak Area Identification
-• 📝 Practice Tests
-• ❓ Doubt Solving
 
 **Choose your subject below to start:**
 
 ---
 ⭐ **Powered By:** {self.POWERED_BY}
 🔧 **Developed by:** {self.CREATOR}
-📚 **CA Intermediate - Complete Prep**
 ---
 """
         
@@ -141,8 +399,7 @@ I'm your CA Intermediate exam preparation assistant.
             parse_mode='Markdown'
         )
     
-    async def about_bot(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Show about bot with credits"""
+    async def about_bot(self, update, context):
         query = update.callback_query
         await query.answer()
         
@@ -154,20 +411,7 @@ Version {self.VERSION}
 
 **👨‍💻 Creator:**
 **{self.CREATOR}** - Owner & Developer
-⭐ **{self.POWERED_BY}** - Project Lead & Creator
-
-**🎯 Purpose:**
-Help CA Intermediate students excel in exams through:
-• MCQ Practice
-• Concept Explanations  
-• Progress Tracking
-• Practice Tests
-
-**🛠️ Tech Stack:**
-• Python 3.11
-• python-telegram-bot v20.3
-• Render Cloud Hosting
-• SQLite Database
+⭐ **{self.POWERED_BY}** - Project Lead
 
 **📚 Subjects Covered:**
 ✅ Accounting
@@ -180,8 +424,6 @@ Help CA Intermediate students excel in exams through:
 ---
 ⭐ **Powered By:** {self.POWERED_BY}
 🔧 **Developed with ❤️ by {self.CREATOR}**
-
-*"Excellence is not a skill, it's an attitude"*
 """
         
         keyboard = [[InlineKeyboardButton("🔙 Back to Main", callback_data="back_main")]]
@@ -193,8 +435,7 @@ Help CA Intermediate students excel in exams through:
             parse_mode='Markdown'
         )
     
-    async def show_topics(self, update: Update, context: ContextTypes.DEFAULT_TYPE, subject_code: str) -> None:
-        """Show topics for selected subject"""
+    async def show_topics(self, update, context, subject_code):
         query = update.callback_query
         user_id = query.from_user.id
         
@@ -205,7 +446,7 @@ Help CA Intermediate students excel in exams through:
         
         if not topics:
             await query.edit_message_text(
-                f"❌ No topics available for {subject_name}\nTry another subject!",
+                f"❌ No topics available for {subject_name}",
                 parse_mode='Markdown'
             )
             return
@@ -219,10 +460,7 @@ Help CA Intermediate students excel in exams through:
                 )
             ])
         
-        keyboard.append([
-            InlineKeyboardButton("🔙 Back to Main", callback_data="back_main"),
-            InlineKeyboardButton("ℹ️ About", callback_data="about_bot")
-        ])
+        keyboard.append([InlineKeyboardButton("🔙 Back to Main", callback_data="back_main")])
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await query.edit_message_text(
@@ -231,8 +469,7 @@ Help CA Intermediate students excel in exams through:
             parse_mode='Markdown'
         )
     
-    async def start_mcq(self, update: Update, context: ContextTypes.DEFAULT_TYPE, topic_id: str) -> None:
-        """Start MCQ practice for a topic"""
+    async def start_mcq(self, update, context, topic_id):
         query = update.callback_query
         user_id = query.from_user.id
         
@@ -240,12 +477,11 @@ Help CA Intermediate students excel in exams through:
         
         if not mcqs:
             await query.edit_message_text(
-                "❌ No MCQs available for this topic yet!\nTry another topic.",
+                "❌ No MCQs available for this topic yet!",
                 parse_mode='Markdown'
             )
             return
         
-        # Update session
         topic_name = self.content.get_topic_name(topic_id)
         self.user_sessions[user_id]['current_topic'] = topic_id
         self.user_sessions[user_id]['topic_name'] = topic_name
@@ -257,8 +493,7 @@ Help CA Intermediate students excel in exams through:
         
         await self.display_mcq(update, context, user_id)
     
-    async def display_mcq(self, update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int) -> None:
-        """Display current MCQ"""
+    async def display_mcq(self, update, context, user_id):
         session = self.user_sessions.get(user_id, {})
         mcqs = session.get('mcqs', [])
         current = session.get('current_mcq', 0)
@@ -273,7 +508,7 @@ Help CA Intermediate students excel in exams through:
         
         keyboard = []
         for i, option in enumerate(mcq['options']):
-            letter = chr(65 + i)  # A, B, C, D
+            letter = chr(65 + i)
             keyboard.append([
                 InlineKeyboardButton(f"{letter}. {option}", callback_data=f"ans_{i}")
             ])
@@ -284,22 +519,14 @@ Help CA Intermediate students excel in exams through:
         ])
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        message = f"""
-📚 **{topic_name}** (Question {current + 1}/{total})
-
-📝 **{mcq['question']}**
-
-Choose your answer:
-"""
-        
         await update.callback_query.edit_message_text(
-            message,
+            f"📚 **{topic_name}** (Q{current + 1}/{total})\n\n"
+            f"📝 **{mcq['question']}**\n\nChoose your answer:",
             reply_markup=reply_markup,
             parse_mode='Markdown'
         )
     
-    async def handle_answer(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Handle MCQ answer"""
+    async def handle_answer(self, update, context):
         query = update.callback_query
         user_id = query.from_user.id
         selected = int(query.data.replace("ans_", ""))
@@ -314,11 +541,9 @@ Choose your answer:
         mcq = mcqs[current]
         is_correct = selected == mcq['correct_answer']
         
-        # Update stats
         if is_correct:
             session['score'] += 1
         
-        # Save history
         session['history'].append({
             'question': mcq['question'],
             'selected': selected,
@@ -328,16 +553,6 @@ Choose your answer:
             'topic': session.get('topic_name', 'Unknown')
         })
         
-        # Save to database
-        self.db.save_mcq_attempt(
-            user_id=str(user_id),
-            topic_id=session.get('current_topic', ''),
-            mcq_id=mcq.get('id', 'unknown'),
-            selected=selected,
-            correct=is_correct
-        )
-        
-        # Show feedback
         feedback = "✅ **CORRECT!**" if is_correct else "❌ **INCORRECT!**"
         correct_answer = mcq['options'][mcq['correct_answer']]
         
@@ -350,244 +565,9 @@ Choose your answer:
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        # Add credits to feedback
         await query.edit_message_text(
             f"{feedback}\n\n"
             f"**Correct Answer:** {correct_answer}\n\n"
             f"**Explanation:**\n{mcq.get('explanation', 'No explanation available')}\n\n"
             f"📊 Score: {session['score']}/{session.get('total', 0)}\n\n"
-            f"⭐ **Powered by:** {self.POWERED_BY}",
-            reply_markup=reply_markup,
-            parse_mode='Markdown'
-        )
-        
-        # Move to next MCQ
-        session['current_mcq'] = current + 1
-    
-    async def next_mcq(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Go to next MCQ"""
-        query = update.callback_query
-        user_id = query.from_user.id
-        await self.display_mcq(update, context, user_id)
-    
-    async def show_results(self, update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int) -> None:
-        """Show MCQ results"""
-        session = self.user_sessions.get(user_id, {})
-        total = session.get('total', 0)
-        score = session.get('score', 0)
-        percentage = calculate_accuracy(score, total)
-        level = get_performance_level(percentage)
-        
-        # Get weak areas
-        weak_areas = []
-        for item in session.get('history', []):
-            if not item['correct']:
-                question = item['question'][:40] + "..."
-                weak_areas.append(question)
-        
-        result_text = f"""
-📊 **QUIZ COMPLETE!**
-
-📝 Topic: {session.get('topic_name', 'Practice')}
-✅ Correct: {score}
-❌ Incorrect: {total - score}
-📈 Score: {percentage:.1f}%
-
-{level}
-"""
-        
-        if weak_areas:
-            result_text += f"\n🎯 **Areas for Improvement:**\n"
-            for area in weak_areas[:3]:
-                result_text += f"• {area}\n"
-        
-        result_text += f"\n⭐ **Powered by:** {self.POWERED_BY}"
-        
-        keyboard = [
-            [
-                InlineKeyboardButton("🔄 Retry", callback_data=f"retry_{session.get('current_topic', '')}"),
-                InlineKeyboardButton("📚 New Subject", callback_data="back_main")
-            ],
-            [InlineKeyboardButton("📊 Full Progress", callback_data="show_progress")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        await update.callback_query.edit_message_text(
-            result_text,
-            reply_markup=reply_markup,
-            parse_mode='Markdown'
-        )
-    
-    async def retry_topic(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Retry a topic"""
-        query = update.callback_query
-        user_id = query.from_user.id
-        topic_id = query.data.replace("retry_", "")
-        await self.start_mcq(update, context, topic_id)
-    
-    async def ask_doubt(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-        """Handle doubt asking"""
-        query = update.callback_query
-        await query.answer()
-        
-        await query.edit_message_text(
-            "🤔 **ASK YOUR DOUBT**\n\n"
-            "Type your question or concept name, and I'll explain it with examples!\n\n"
-            "*Examples:*\n"
-            "• What is depreciation?\n"
-            "• Explain GST in detail\n"
-            "• How does Section 80C work?\n"
-            "• What is a company under Company Law?\n"
-            "• Explain audit planning\n\n"
-            "💡 *Be specific for better explanations!*\n\n"
-            "Type your question now:",
-            parse_mode='Markdown'
-        )
-        return DOUBT_INPUT
-    
-    async def handle_doubt(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-        """Handle doubt input with AI-powered explanation"""
-        user_input = update.message.text
-        user_id = update.effective_user.id
-        
-        if not validate_input(user_input):
-            await update.message.reply_text(
-                "⚠️ Please enter a valid question. Avoid special characters or very long messages.",
-                parse_mode='Markdown'
-            )
-            return DOUBT_INPUT
-        
-        # Get explanation
-        explanation = self.content.explain_concept(user_input)
-        
-        # Find related MCQs
-        related = self.content.find_related_mcqs(user_input)
-        
-        response = explanation
-        
-        if related:
-            response += "\n\n📝 **Related Practice Questions:**\n"
-            for i, mcq in enumerate(related[:2], 1):
-                response += f"\n{i}. {mcq['question']}"
-            
-            response += "\n\n*Start a topic to practice these questions!*"
-        
-        # Add credits
-        response += f"\n\n---\n⭐ **Powered by:** {self.POWERED_BY}"
-        
-        keyboard = [[InlineKeyboardButton("🔙 Back to Main", callback_data="back_main")]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        await update.message.reply_text(
-            response,
-            reply_markup=reply_markup,
-            parse_mode='Markdown'
-        )
-        
-        # Save doubt to database
-        self.db.save_doubt(
-            user_id=str(user_id),
-            question=user_input,
-            response=explanation[:500]  # Save first 500 chars
-        )
-        
-        return ConversationHandler.END
-    
-    async def show_progress(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Show user progress with detailed analytics"""
-        query = update.callback_query
-        user_id = query.from_user.id
-        session = self.user_sessions.get(user_id, {})
-        
-        # Get database stats
-        db_stats = self.db.get_user_stats(str(user_id))
-        
-        history = session.get('history', [])
-        total = len(history)
-        
-        if total == 0:
-            await query.edit_message_text(
-                "📊 **NO DATA YET!**\n\n"
-                "Start practicing MCQs to track your progress.\n"
-                "Your performance will be analyzed automatically.\n\n"
-                "📈 **Quick Stats:**\n"
-                f"• Total Questions: 0\n"
-                f"• Accuracy: 0%\n"
-                f"• Topics Covered: 0\n\n"
-                "💡 **Tip:** Practice regularly for best results!\n\n"
-                f"⭐ **Powered by:** {self.POWERED_BY}",
-                parse_mode='Markdown'
-            )
-            return
-        
-        correct = sum(1 for h in history if h['correct'])
-        percentage = calculate_accuracy(correct, total)
-        
-        # Topic-wise breakdown
-        topic_stats = {}
-        for h in history:
-            topic = h.get('topic', 'General')
-            if topic not in topic_stats:
-                topic_stats[topic] = {'total': 0, 'correct': 0}
-            topic_stats[topic]['total'] += 1
-            if h['correct']:
-                topic_stats[topic]['correct'] += 1
-        
-        progress_text = f"""
-📊 **YOUR PROGRESS REPORT**
-
-📝 Total Questions: {total}
-✅ Correct: {correct}
-❌ Incorrect: {total - correct}
-📈 Accuracy: {percentage:.1f}%
-
-📚 **Topics Covered:** {len(topic_stats)}
-"""
-        
-        # Show top topics
-        if topic_stats:
-            progress_text += "\n📖 **Topic Breakdown:**\n"
-            for topic, stats in list(topic_stats.items())[:3]:
-                acc = calculate_accuracy(stats['correct'], stats['total'])
-                emoji = "🌟" if acc >= 80 else "👍" if acc >= 60 else "📖"
-                progress_text += f"• {emoji} {topic}: {acc:.1f}%\n"
-        
-        progress_text += f"\n⭐ **Powered by:** {self.POWERED_BY}"
-        
-        keyboard = [
-            [InlineKeyboardButton("📝 Practice More", callback_data="back_main")],
-            [InlineKeyboardButton("📊 Full Analytics", callback_data="full_analytics")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        await query.edit_message_text(
-            progress_text,
-            reply_markup=reply_markup,
-            parse_mode='Markdown'
-        )
-    
-    async def practice_test(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Generate practice test with random questions"""
-        query = update.callback_query
-        await query.answer()
-        
-        user_id = query.from_user.id
-        session = self.user_sessions.get(user_id, {})
-        subject = session.get('current_subject', 'accounts')
-        
-        # Get all MCQs from subject
-        all_mcqs = []
-        topics = self.content.get_topics(subject)
-        for topic in topics:
-            mcqs = self.content.get_mcqs(topic['id'])
-            all_mcqs.extend(mcqs)
-        
-        if len(all_mcqs) < 5:
-            await query.edit_message_text(
-                "❌ Not enough MCQs for a test!\n"
-                f"Need at least 5 questions. Currently: {len(all_mcqs)}\n\n"
-                "Try a different subject or practice more topics.",
-                parse_mode='Markdown'
-            )
-            return
-     
+            f"⭐ **Powere
