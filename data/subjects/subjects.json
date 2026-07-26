@@ -1,0 +1,42 @@
+{
+  "subjects": {
+    "accounts": {
+      "name": "Accounting",
+      "emoji": "📚",
+      "color": "#4CAF50",
+      "description": "Financial accounting, standards, and statements"
+    },
+    "law": {
+      "name": "Business Laws",
+      "emoji": "⚖️",
+      "color": "#2196F3",
+      "description": "Company law, contracts, and regulations"
+    },
+    "taxation": {
+      "name": "Taxation",
+      "emoji": "💰",
+      "color": "#FF9800",
+      "description": "Income tax, GST, and filing"
+    },
+    "costing": {
+      "name": "Cost & Management Accounting",
+      "emoji": "📊",
+      "color": "#9C27B0",
+      "description": "Cost analysis, BEP, budgeting"
+    },
+    "audit": {
+      "name": "Auditing",
+      "emoji": "📋",
+      "color": "#F44336",
+      "description": "Audit planning, execution, and reporting"
+    },
+    "fm_sm": {
+      "name": "Financial Management & Strategic Management",
+      "emoji": "📑",
+      "color": "#00BCD4",
+      "description": "Financial decisions and strategic planning"
+    }
+  },
+  "version": "2.0",
+  "updated_at": "2026-01-26T12:00:00"
+}
