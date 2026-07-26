@@ -4,293 +4,293 @@ import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes, ConversationHandler
 
+# ===== LOGGING =====
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# ===== CONFIG =====
 TOKEN = "8707473118:AAErmBRuzuU9JRR08mE4TNsGDGUWdHwVpxU"
 DOUBT_INPUT = 1
 
-class CAContent:
+# ===== CONTENT =====
+subjects = {
+    'accounts': 'Accounting',
+    'law': 'Law',
+    'taxation': 'Taxation',
+    'costing': 'Costing',
+    'audit': 'Audit',
+    'fm_sm': 'FM and SM'
+}
+
+topics = {
+    'accounts': [
+        {'id': 'acc_1', 'name': 'Accounting Standards'},
+        {'id': 'acc_2', 'name': 'Company Accounts'},
+        {'id': 'acc_3', 'name': 'Consolidation'}
+    ],
+    'law': [
+        {'id': 'law_1', 'name': 'Company Law'},
+        {'id': 'law_2', 'name': 'Contract Law'}
+    ],
+    'taxation': [
+        {'id': 'tax_1', 'name': 'Income Tax Basics'},
+        {'id': 'tax_2', 'name': 'GST'}
+    ],
+    'costing': [
+        {'id': 'cost_1', 'name': 'Cost Sheet'},
+        {'id': 'cost_2', 'name': 'BEP Analysis'}
+    ],
+    'audit': [
+        {'id': 'aud_1', 'name': 'Audit Planning'},
+        {'id': 'aud_2', 'name': 'Internal Audit'}
+    ],
+    'fm_sm': [
+        {'id': 'fm_1', 'name': 'Financial Management'},
+        {'id': 'fm_2', 'name': 'Working Capital'}
+    ]
+}
+
+mcqs = {
+    'acc_1': [
+        {'q': 'Which AS deals with PPE?', 'opts': ['AS 10', 'AS 16', 'AS 7', 'AS 19'], 'ans': 0, 'exp': 'AS 10 deals with PPE.'},
+        {'q': 'What is Capital Reserve?', 'opts': ['P and L', 'Liability', 'Reserve and Surplus', 'General'], 'ans': 2, 'exp': 'Shown under Reserves.'}
+    ],
+    'law_1': [
+        {'q': 'Min directors in public company?', 'opts': ['2', '3', '5', '7'], 'ans': 1, 'exp': 'Section 149: min 3.'},
+        {'q': 'Max directors in public company?', 'opts': ['10', '15', '20', 'No limit'], 'ans': 1, 'exp': 'Max 15 directors.'}
+    ],
+    'tax_1': [
+        {'q': 'Residential status based on?', 'opts': ['Citizenship', 'Domicile', 'Physical presence', 'All'], 'ans': 2, 'exp': 'Based on physical presence.'},
+        {'q': '80C limit is?', 'opts': ['1L', '1.5L', '2L', '2.5L'], 'ans': 1, 'exp': '1.5 lakh is 80C limit.'}
+    ],
+    'cost_1': [
+        {'q': 'BEP formula in units?', 'opts': ['FC/CM', 'VC/CM', 'FC+VC', 'TC/U'], 'ans': 0, 'exp': 'BEP = FC / CM per unit.'}
+    ],
+    'aud_1': [
+        {'q': 'Primary objective of audit?', 'opts': ['Detect fraud', 'Express opinion', 'Prepare stmts', 'Manage'], 'ans': 1, 'exp': 'To express opinion on financials.'}
+    ],
+    'fm_1': [
+        {'q': 'Primary objective of FM?', 'opts': ['Profit max', 'Wealth max', 'Sales max', 'Cost min'], 'ans': 1, 'exp': 'Wealth maximization is primary.'}
+    ]
+}
+
+def get_topics(subj):
+    return topics.get(subj, [])
+
+def get_mcqs(topic_id):
+    return mcqs.get(topic_id, [])
+
+def get_topic_name(topic_id):
+    for subj in topics.values():
+        for t in subj:
+            if t['id'] == topic_id:
+                return t['name']
+    return 'Unknown'
+
+# ===== BOT =====
+class Bot:
     def __init__(self):
-        self.subjects = {
-            'accounts': '📚 Accounting',
-            'law': '⚖️ Business Laws', 
-            'taxation': '💰 Taxation',
-            'costing': '📊 Costing',
-            'audit': '📋 Auditing',
-            'fm_sm': '📑 FM & SM'
-        }
-        
-        self.topics = {
-            'accounts': [
-                {'id': 'acc_1', 'name': 'Accounting Standards', 'emoji': '📖'},
-                {'id': 'acc_2', 'name': 'Company Accounts', 'emoji': '🏢'},
-                {'id': 'acc_3', 'name': 'Consolidation', 'emoji': '📊'},
-                {'id': 'acc_4', 'name': 'Partnership Accounts', 'emoji': '🤝'},
-                {'id': 'acc_5', 'name': 'Financial Statements', 'emoji': '📈'}
-            ],
-            'law': [
-                {'id': 'law_1', 'name': 'Company Law', 'emoji': '🏛️'},
-                {'id': 'law_2', 'name': 'Contract Law', 'emoji': '📜'},
-                {'id': 'law_3', 'name': 'Negotiable Instruments', 'emoji': '💳'},
-                {'id': 'law_4', 'name': 'LLP Law', 'emoji': '🤝'}
-            ],
-            'taxation': [
-                {'id': 'tax_1', 'name': 'Income Tax Basics', 'emoji': '💵'},
-                {'id': 'tax_2', 'name': 'TDS & TCS', 'emoji': '💰'},
-                {'id': 'tax_3', 'name': 'GST', 'emoji': '🛒'},
-                {'id': 'tax_4', 'name': 'Filing Returns', 'emoji': '📋'}
-            ],
-            'costing': [
-                {'id': 'cost_1', 'name': 'Cost Sheet', 'emoji': '📊'},
-                {'id': 'cost_2', 'name': 'BEP Analysis', 'emoji': '📈'},
-                {'id': 'cost_3', 'name': 'Standard Costing', 'emoji': '🎯'},
-                {'id': 'cost_4', 'name': 'Budgeting', 'emoji': '📅'}
-            ],
-            'audit': [
-                {'id': 'aud_1', 'name': 'Audit Planning', 'emoji': '📋'},
-                {'id': 'aud_2', 'name': 'Internal Audit', 'emoji': '🔍'},
-                {'id': 'aud_3', 'name': 'Statutory Audit', 'emoji': '✅'},
-                {'id': 'aud_4', 'name': 'Audit Report', 'emoji': '📄'}
-            ],
-            'fm_sm': [
-                {'id': 'fm_1', 'name': 'Financial Management', 'emoji': '💹'},
-                {'id': 'fm_2', 'name': 'Working Capital', 'emoji': '🔄'},
-                {'id': 'fm_3', 'name': 'Strategic Management', 'emoji': '🎯'},
-                {'id': 'fm_4', 'name': 'Corporate Governance', 'emoji': '🏢'}
-            ]
-        }
-        
-        self.mcqs = {
-            'acc_1': [
-                {'id': 'acc_1_1', 'question': 'Which accounting standard deals with Property, Plant and Equipment?', 'options': ['AS 10', 'AS 16', 'AS 7', 'AS 19'], 'correct_answer': 0, 'explanation': 'AS 10 deals with Property, Plant and Equipment.', 'hint': 'Remember AS 10'},
-                {'id': 'acc_1_2', 'question': 'What is Capital Reserve?', 'options': ['Credited to P&L', 'Shown as Liability', 'Shown as Reserve and Surplus', 'Transferred to General Reserve'], 'correct_answer': 2, 'explanation': 'Capital reserve is shown under Reserves and Surplus.', 'hint': 'Think Balance Sheet'},
-                {'id': 'acc_1_3', 'question': 'Which method is used for consolidation?', 'options': ['Equity method', 'Proportionate method', 'Full consolidation', 'Cost method'], 'correct_answer': 2, 'explanation': 'Full consolidation is used when parent has control.', 'hint': 'Control = Full'},
-                {'id': 'acc_1_4', 'question': 'Goodwill is a:', 'options': ['Fixed asset', 'Intangible asset', 'Current asset', 'Liability'], 'correct_answer': 1, 'explanation': 'Goodwill is an intangible asset.', 'hint': 'Can you touch it?'},
-                {'id': 'acc_1_5', 'question': 'Depreciation is:', 'options': ['Cash expense', 'Non-cash expense', 'Revenue expense', 'Capital expense'], 'correct_answer': 1, 'explanation': 'Depreciation is a non-cash expense.', 'hint': 'No cash outflow'}
-            ],
-            'acc_2': [
-                {'id': 'acc_2_1', 'question': 'Minimum number of members in a private company?', 'options': ['2', '3', '5', '7'], 'correct_answer': 0, 'explanation': 'Private company needs minimum 2 members.', 'hint': 'Private = 2'},
-                {'id': 'acc_2_2', 'question': 'What is share premium?', 'options': ['Revenue reserve', 'Capital reserve', 'Profit', 'Liability'], 'correct_answer': 1, 'explanation': 'Share premium is a capital reserve.', 'hint': 'Capital nature'}
-            ],
-            'law_1': [
-                {'id': 'law_1_1', 'question': 'Minimum directors in a public company?', 'options': ['2', '3', '5', '7'], 'correct_answer': 1, 'explanation': 'Section 149 requires minimum 3 directors.', 'hint': 'Public = 3'},
-                {'id': 'law_1_2', 'question': 'Maximum directors in a public company?', 'options': ['10', '15', '20', 'No limit'], 'correct_answer': 1, 'explanation': 'Maximum 15 directors, can be increased.', 'hint': 'Section 149'},
-                {'id': 'law_1_3', 'question': 'What is MOA?', 'options': ['Internal rules', 'Fundamental rules', 'Share rules', 'Meeting rules'], 'correct_answer': 1, 'explanation': 'MOA contains fundamental rules of company.', 'hint': 'Foundation'}
-            ],
-            'tax_1': [
-                {'id': 'tax_1_1', 'question': 'Residential status is based on:', 'options': ['Citizenship', 'Domicile', 'Physical presence', 'All'], 'correct_answer': 2, 'explanation': 'Based on physical presence in India.', 'hint': 'Days in India'},
-                {'id': 'tax_1_2', 'question': 'Basic exemption limit for individual below 60?', 'options': ['250000', '300000', '500000', '1000000'], 'correct_answer': 0, 'explanation': '250000 is the limit.', 'hint': '2.5 lakh'},
-                {'id': 'tax_1_3', 'question': 'Section 80C limit is:', 'options': ['100000', '150000', '200000', '250000'], 'correct_answer': 1, 'explanation': '150000 is the 80C limit.', 'hint': '1.5 lakh'}
-            ],
-            'tax_3': [
-                {'id': 'tax_3_1', 'question': 'CGST is collected by:', 'options': ['State', 'Central', 'Both', 'Local'], 'correct_answer': 1, 'explanation': 'CGST is collected by Central Government.', 'hint': 'C = Central'},
-                {'id': 'tax_3_2', 'question': 'SGST is collected by:', 'options': ['State', 'Central', 'Both', 'Local'], 'correct_answer': 0, 'explanation': 'SGST is collected by State Government.', 'hint': 'S = State'}
-            ],
-            'cost_1': [
-                {'id': 'cost_1_1', 'question': 'BEP formula in units?', 'options': ['FC/CM per unit', 'VC/CM per unit', 'FC+VC', 'TC/U'], 'correct_answer': 0, 'explanation': 'BEP = FC / Contribution per unit.', 'hint': 'FC / CM'},
-                {'id': 'cost_1_2', 'question': 'Fixed cost is:', 'options': ['Variable', 'Constant', 'Semi-variable', 'Step'], 'correct_answer': 1, 'explanation': 'Fixed cost remains constant.', 'hint': 'No change'},
-                {'id': 'cost_1_3', 'question': 'Variable cost:', 'options': ['Constant', 'Changes with output', 'Fixed', 'Mixed'], 'correct_answer': 1, 'explanation': 'Variable cost changes with output.', 'hint': 'Changes'}
-            ],
-            'aud_1': [
-                {'id': 'aud_1_1', 'question': 'Primary objective of audit?', 'options': ['Detect fraud', 'Express opinion', 'Prepare statements', 'Manage company'], 'correct_answer': 1, 'explanation': 'To express opinion on financial statements.', 'hint': 'Opinion'},
-                {'id': 'aud_1_2', 'question': 'Internal audit is:', 'options': ['Mandatory', 'Voluntary', 'Required by law', 'Optional'], 'correct_answer': 0, 'explanation': 'Internal audit is mandatory for certain companies.', 'hint': 'Compulsory'}
-            ],
-            'fm_1': [
-                {'id': 'fm_1_1', 'question': 'Primary objective of FM?', 'options': ['Profit maximization', 'Wealth maximization', 'Sales maximization', 'Cost minimization'], 'correct_answer': 1, 'explanation': 'Wealth maximization is the primary objective.', 'hint': 'Shareholder wealth'},
-                {'id': 'fm_1_2', 'question': 'Capital budgeting deals with:', 'options': ['Short-term', 'Long-term', 'Both', 'None'], 'correct_answer': 1, 'explanation': 'Capital budgeting deals with long-term decisions.', 'hint': 'Long-term'},
-                {'id': 'fm_1_3', 'question': 'Working capital means:', 'options': ['Fixed assets', 'Current assets', 'Current liabilities', 'CA - CL'], 'correct_answer': 3, 'explanation': 'Working capital = Current Assets - Current Liabilities.', 'hint': 'CA - CL'}
-            ]
-        }
-
-    def get_subjects(self): return self.subjects
-    def get_topics(self, subject_code): return self.topics.get(subject_code, [])
-    def get_mcqs(self, topic_id): return self.mcqs.get(topic_id, [])
-    def get_topic_name(self, topic_id):
-        for topics in self.topics.values():
-            for topic in topics:
-                if topic['id'] == topic_id: return topic['name']
-        return "Unknown"
-    
-    def explain_concept(self, query):
-        q = query.lower()
-        if 'depreciation' in q:
-            return "DEPRECIATION: Systematic allocation of cost over useful life. Methods: SLM, WDV."
-        if 'gst' in q:
-            return "GST: Comprehensive indirect tax. Types: CGST, SGST, IGST. Rates: 5%, 12%, 18%, 28%."
-        if 'section 80c' in q or '80c' in q:
-            return "SECTION 80C: Tax deduction up to 150,000. Eligible: PPF, LIC, ELSS, NSC."
-        if 'company law' in q:
-            return "COMPANY LAW: Companies Act 2013. Key: Section 149 (Directors), 180 (Board powers)."
-        return "Important CA Inter concept. Refer ICAI module and practice MCQs!"
-
-    def find_related_mcqs(self, query):
-        all_mcqs = [mcq for mcqs in self.mcqs.values() for mcq in mcqs]
-        keywords = query.lower().split()
-        related = []
-        for mcq in all_mcqs:
-            if any(k in mcq['question'].lower() for k in keywords[:3]):
-                related.append(mcq)
-                if len(related) >= 3: break
-        return related
-
-class CABot:
-    def __init__(self):
-        self.content = CAContent()
-        self.user_sessions = {}
-        self.CREATOR = "MeNgHeaNg"
-        self.POWERED_BY = "@Introspection007"
+        self.sessions = {}
 
     async def start(self, update, context):
         user = update.effective_user
-        self.user_sessions[user.id] = {
-            'current_subject': None, 'current_topic': None, 'topic_name': None,
-            'mcqs': [], 'current_mcq': 0, 'score': 0, 'total': 0, 'history': []
-        }
+        self.sessions[user.id] = {'subject': None, 'topic': None, 'mcqs': [], 'index': 0, 'score': 0, 'total': 0, 'history': []}
         keyboard = [
-            [InlineKeyboardButton("Accounting", callback_data="sub_accounts"), InlineKeyboardButton("Law", callback_data="sub_law")],
-            [InlineKeyboardButton("Taxation", callback_data="sub_taxation"), InlineKeyboardButton("Costing", callback_data="sub_costing")],
-            [InlineKeyboardButton("Audit", callback_data="sub_audit"), InlineKeyboardButton("FM and SM", callback_data="sub_fm_sm")],
-            [InlineKeyboardButton("Ask Doubt", callback_data="ask_doubt"), InlineKeyboardButton("Progress", callback_data="show_progress")],
-            [InlineKeyboardButton("Practice Test", callback_data="practice_test"), InlineKeyboardButton("About", callback_data="about_bot")]
+            [InlineKeyboardButton('Accounting', callback_data='sub_accounts'), InlineKeyboardButton('Law', callback_data='sub_law')],
+            [InlineKeyboardButton('Taxation', callback_data='sub_taxation'), InlineKeyboardButton('Costing', callback_data='sub_costing')],
+            [InlineKeyboardButton('Audit', callback_data='sub_audit'), InlineKeyboardButton('FM and SM', callback_data='sub_fm_sm')],
+            [InlineKeyboardButton('Doubt', callback_data='doubt'), InlineKeyboardButton('Progress', callback_data='progress')],
+            [InlineKeyboardButton('Test', callback_data='test'), InlineKeyboardButton('About', callback_data='about')]
         ]
-        await update.message.reply_text(
-            f"WELCOME TO CA INTER BOT v2.0\n\nHey {user.first_name}! 👋\n\nI'm your CA exam assistant with 50+ MCQs!\n\nPowered By: {self.POWERED_BY}\nDeveloped by: {self.CREATOR}",
-            reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
+        msg = f'CA INTER BOT v2.0\n\nHey {user.first_name}! 👋\n\nPowered by: @Introspection007\nDeveloped by: MeNgHeaNg'
+        await update.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
 
-    async def about_bot(self, update, context):
-        query = update.callback_query
-        await query.answer()
-        await query.edit_message_text(
-            "ABOUT\n\nCA Inter Bot v2.0\n\nCreated by: MeNgHeaNg\nPowered by: @Introspection007\n\n50+ MCQs\n6 Subjects\n20+ Topics",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Back", callback_data="back_main")]]),
-            parse_mode='Markdown')
+    async def about(self, update, context):
+        q = update.callback_query
+        await q.answer()
+        await q.edit_message_text('CA Inter Bot v2.0\n\nBy: MeNgHeaNg\nPowered: @Introspection007', reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('Back', callback_data='back')]]), parse_mode='Markdown')
 
-    async def show_topics(self, update, context, subject_code):
-        query = update.callback_query
-        user_id = query.from_user.id
-        self.user_sessions[user_id]['current_subject'] = subject_code
-        topics = self.content.get_topics(subject_code)
-        keyboard = [[InlineKeyboardButton(f"{t['emoji']} {t['name']}", callback_data=f"topic_{t['id']}")] for t in topics]
-        keyboard.append([InlineKeyboardButton("Back", callback_data="back_main")])
-        await query.edit_message_text(
-            f"{self.content.get_subjects().get(subject_code)}\n\nChoose a topic:",
-            reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
+    async def show_topics(self, update, context, subj):
+        q = update.callback_query
+        user = q.from_user.id
+        self.sessions[user]['subject'] = subj
+        ts = get_topics(subj)
+        if not ts:
+            await q.edit_message_text('No topics.', parse_mode='Markdown')
+            return
+        keyboard = [[InlineKeyboardButton(t['name'], callback_data=f'topic_{t["id"]}')] for t in ts]
+        keyboard.append([InlineKeyboardButton('Back', callback_data='back')])
+        await q.edit_message_text(f'{subjects.get(subj)} - Choose topic:', reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
 
     async def start_mcq(self, update, context, topic_id):
-        query = update.callback_query
-        user_id = query.from_user.id
-        mcqs = self.content.get_mcqs(topic_id)
-        if not mcqs:
-            await query.edit_message_text("No MCQs available for this topic yet.", parse_mode='Markdown')
+        q = update.callback_query
+        user = q.from_user.id
+        ms = get_mcqs(topic_id)
+        if not ms:
+            await q.edit_message_text('No MCQs yet.', parse_mode='Markdown')
             return
-        topic_name = self.content.get_topic_name(topic_id)
-        self.user_sessions[user_id].update({
-            'current_topic': topic_id, 'topic_name': topic_name,
-            'mcqs': mcqs, 'current_mcq': 0, 'score': 0, 'total': len(mcqs), 'history': []
-        })
-        await self.display_mcq(update, context, user_id)
+        name = get_topic_name(topic_id)
+        self.sessions[user].update({'topic': topic_id, 'mcqs': ms, 'index': 0, 'score': 0, 'total': len(ms), 'history': []})
+        await self.show_mcq(update, context, user)
 
-    async def display_mcq(self, update, context, user_id):
-        session = self.user_sessions[user_id]
-        if session['current_mcq'] >= session['total']:
-            await self.show_results(update, context, user_id)
+    async def show_mcq(self, update, context, user):
+        s = self.sessions[user]
+        if s['index'] >= s['total']:
+            await self.results(update, context, user)
             return
-        mcq = session['mcqs'][session['current_mcq']]
-        keyboard = [[InlineKeyboardButton(f"{chr(65+i)}. {opt}", callback_data=f"ans_{i}")] for i, opt in enumerate(mcq['options'])]
-        keyboard.append([InlineKeyboardButton("Progress", callback_data="show_progress"), InlineKeyboardButton("Hint", callback_data=f"hint_{session['current_mcq']}")])
+        mcq = s['mcqs'][s['index']]
+        keyboard = [[InlineKeyboardButton(f'{chr(65+i)}. {opt}', callback_data=f'ans_{i}')] for i, opt in enumerate(mcq['opts'])]
+        keyboard.append([InlineKeyboardButton('Progress', callback_data='progress')])
         await update.callback_query.edit_message_text(
-            f"{session['topic_name']} (Q{session['current_mcq']+1}/{session['total']})\n\n{mcq['question']}",
-            reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
+            f"{s['topic']} (Q{s['index']+1}/{s['total']})\n\n{mcq['q']}",
+            reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown'
+        )
 
-    async def handle_answer(self, update, context):
-        query = update.callback_query
-        user_id = query.from_user.id
-        selected = int(query.data.replace("ans_", ""))
-        session = self.user_sessions[user_id]
-        mcq = session['mcqs'][session['current_mcq']]
-        is_correct = selected == mcq['correct_answer']
-        if is_correct: session['score'] += 1
-        session['history'].append({'question': mcq['question'], 'correct': is_correct, 'explanation': mcq.get('explanation', '')})
-        keyboard = [[InlineKeyboardButton("Next", callback_data="next_mcq_")], [InlineKeyboardButton("Progress", callback_data="show_progress")]]
-        await query.edit_message_text(
-            f"{'CORRECT!' if is_correct else 'INCORRECT!'}\n\nCorrect Answer: {mcq['options'][mcq['correct_answer']]}\n\nExplanation: {mcq.get('explanation', '')}\n\nScore: {session['score']}/{session['total']}",
-            reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
-        session['current_mcq'] += 1
+    async def handle_ans(self, update, context):
+        q = update.callback_query
+        user = q.from_user.id
+        selected = int(q.data.replace('ans_', ''))
+        s = self.sessions[user]
+        mcq = s['mcqs'][s['index']]
+        correct = selected == mcq['ans']
+        if correct:
+            s['score'] += 1
+        s['history'].append({'q': mcq['q'], 'correct': correct})
+        keyboard = [[InlineKeyboardButton('Next', callback_data='next')], [InlineKeyboardButton('Progress', callback_data='progress')]]
+        await q.edit_message_text(
+            f"{'CORRECT!' if correct else 'INCORRECT!'}\n\nAnswer: {mcq['opts'][mcq['ans']]}\n\n{mcq.get('exp', '')}\n\nScore: {s['score']}/{s['total']}",
+            reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown'
+        )
+        s['index'] += 1
 
-    async def next_mcq(self, update, context):
-        await self.display_mcq(update, context, update.callback_query.from_user.id)
+    async def next(self, update, context):
+        await self.show_mcq(update, context, update.callback_query.from_user.id)
 
-    async def show_results(self, update, context, user_id):
-        session = self.user_sessions[user_id]
-        score, total = session['score'], session['total']
-        pct = (score/total*100) if total > 0 else 0
-        level = "EXCELLENT!" if pct >= 80 else "GOOD!" if pct >= 60 else "NEEDS IMPROVEMENT" if pct >= 40 else "KEEP PRACTICING!"
+    async def results(self, update, context, user):
+        s = self.sessions[user]
+        pct = (s['score']/s['total']*100) if s['total'] > 0 else 0
+        level = 'EXCELLENT!' if pct >= 80 else 'GOOD!' if pct >= 60 else 'KEEP PRACTICING!'
+        keyboard = [[InlineKeyboardButton('Retry', callback_data=f'retry_{s["topic"]}'), InlineKeyboardButton('Back', callback_data='back')]]
         await update.callback_query.edit_message_text(
-            f"QUIZ COMPLETE!\n\nCorrect: {score}\nIncorrect: {total-score}\nScore: {pct:.1f}%\n\n{level}",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Retry", callback_data=f"retry_{session.get('current_topic', '')}"), InlineKeyboardButton("Back", callback_data="back_main")]]),
-            parse_mode='Markdown')
+            f"QUIZ DONE!\n\nCorrect: {s['score']}\nIncorrect: {s['total']-s['score']}\nScore: {pct:.1f}%\n\n{level}",
+            reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown'
+        )
 
-    async def retry_topic(self, update, context):
-        await self.start_mcq(update, context, update.callback_query.data.replace("retry_", ""))
+    async def retry(self, update, context):
+        await self.start_mcq(update, context, update.callback_query.data.replace('retry_', ''))
 
-    async def ask_doubt(self, update, context):
-        await update.callback_query.edit_message_text(
-            "ASK YOUR DOUBT\n\nType your question. Examples:\n- What is depreciation?\n- Explain GST\n- Section 80C\n- Company law basics",
-            parse_mode='Markdown')
+    async def doubt(self, update, context):
+        await update.callback_query.edit_message_text('Ask your doubt:\n- Depreciation\n- GST\n- Section 80C\n- Company Law', parse_mode='Markdown')
         return DOUBT_INPUT
 
     async def handle_doubt(self, update, context):
-        explanation = self.content.explain_concept(update.message.text)
-        related = self.content.find_related_mcqs(update.message.text)
-        response = explanation
-        if related:
-            response += "\n\nRelated Questions:\n" + "\n".join([f"{i+1}. {m['question']}" for i, m in enumerate(related[:3])])
-        await update.message.reply_text(
-            response,
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Back", callback_data="back_main")]]),
-            parse_mode='Markdown')
+        text = update.message.text.lower()
+        if 'depreciation' in text:
+            ans = 'DEPRECIATION: Cost allocation over useful life. Methods: SLM, WDV.'
+        elif 'gst' in text:
+            ans = 'GST: CGST, SGST, IGST. Rates: 5%, 12%, 18%, 28%.'
+        elif '80c' in text:
+            ans = 'SEC 80C: Up to 1.5L deduction. Investments: PPF, LIC, ELSS, NSC.'
+        else:
+            ans = 'Important CA concept. Refer ICAI module.'
+        await update.message.reply_text(ans, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('Back', callback_data='back')]]), parse_mode='Markdown')
         return ConversationHandler.END
 
-    async def show_progress(self, update, context):
-        session = self.user_sessions.get(update.callback_query.from_user.id, {})
-        history = session.get('history', [])
-        if not history:
-            await update.callback_query.edit_message_text("NO DATA YET!\n\nStart practicing to track progress.", parse_mode='Markdown')
+    async def progress(self, update, context):
+        s = self.sessions.get(update.callback_query.from_user.id, {})
+        h = s.get('history', [])
+        if not h:
+            await update.callback_query.edit_message_text('No data yet. Start practicing!', parse_mode='Markdown')
             return
-        correct = sum(1 for h in history if h['correct'])
+        correct = sum(1 for x in h if x['correct'])
         await update.callback_query.edit_message_text(
-            f"YOUR PROGRESS\n\nTotal: {len(history)}\nCorrect: {correct}\nIncorrect: {len(history)-correct}\nAccuracy: {(correct/len(history)*100):.1f}%",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Practice More", callback_data="back_main")]]),
-            parse_mode='Markdown')
+            f"PROGRESS\n\nTotal: {len(h)}\nCorrect: {correct}\nAccuracy: {(correct/len(h)*100):.1f}%",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton('Back', callback_data='back')]]), parse_mode='Markdown'
+        )
 
-    async def practice_test(self, update, context):
-        query = update.callback_query
-        await query.answer()
-        user_id = query.from_user.id
-        subject = self.user_sessions.get(user_id, {}).get('current_subject', 'accounts')
-        all_mcqs = [mcq for topic in self.content.get_topics(subject) for mcq in self.content.get_mcqs(topic['id'])]
-        if len(all_mcqs) < 5:
-            await query.edit_message_text("Not enough MCQs for a test! Try a different subject.", parse_mode='Markdown')
+    async def test(self, update, context):
+        q = update.callback_query
+        await q.answer()
+        user = q.from_user.id
+        subj = self.sessions.get(user, {}).get('subject', 'accounts')
+        all_mcqs = []
+        for t in get_topics(subj):
+            all_mcqs.extend(get_mcqs(t['id']))
+        if len(all_mcqs) < 3:
+            await q.edit_message_text('Not enough MCQs for test.', parse_mode='Markdown')
             return
-        test_mcqs = random.sample(all_mcqs, min(10, len(all_mcqs)))
-        self.user_sessions[user_id].update({'test_mcqs': test_mcqs, 'test_index': 0, 'test_score': 0, 'test_total': len(test_mcqs)})
-        await self.display_test_mcq(update, context, user_id)
+        test_qs = random.sample(all_mcqs, min(5, len(all_mcqs)))
+        self.sessions[user].update({'test': test_qs, 'test_idx': 0, 'test_score': 0, 'test_total': len(test_qs)})
+        await self.show_test(update, context, user)
 
-    async def display_test_mcq(self, update, context, user_id):
-        session = self.user_sessions[user_id]
-        if session['test_index'] >= session['test_total']:
-            await self.show_test_results(update, context, user_id)
+    async def show_test(self, update, context, user):
+        s = self.sessions[user]
+        if s['test_idx'] >= s['test_total']:
+            await self.test_results(update, context, user)
             return
-        mcq = session['test_mcqs'][session['test_index']]
-        keyboard = [[InlineKeyboardButton(f"{chr(65+i)}. {opt}", callback_data=f"test_ans_{i}")] for i, opt in enumerate(mcq['options'])]
+        mcq = s['test'][s['test_idx']]
+        keyboard = [[InlineKeyboardButton(f'{chr(65+i)}. {opt}', callback_data=f'tans_{i}')] for i, opt in enumerate(mcq['opts'])]
         await update.callback_query.edit_message_text(
-            f"TEST - Q{session['test_index']+1}/{session['test_total']}\n\n{mcq['question']}",
-            reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
+            f"TEST Q{s['test_idx']+1}/{s['test_total']}\n\n{mcq['q']}",
+            reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown'
+        )
 
-    async def handle_test_answer(self, update, context):
-        query = update.callback_query
-        user_id = query.from_user.id
-        selected = int(query.data.replace("test_ans_", ""))
-        session = self.user_sessions[user_id]
-    
+    async def handle_test_ans(self, update, context):
+        q = update.callback_query
+        user = q.from_user.id
+        selected = int(q.data.replace('tans_', ''))
+        s = self.sessions[user]
+        mcq = s['test'][s['test_idx']]
+        correct = selected == mcq['ans']
+        if correct:
+            s['test_score'] += 1
+        await q.answer(f"{'Correct!' if correct else 'Answer: ' + mcq['opts'][mcq['ans']]}", show_alert=True)
+        s['test_idx'] += 1
+        if s['test_idx'] >= s['test_total']:
+            await self.test_results(update, context, user)
+        else:
+            await self.show_test(update, context, user)
+
+    async def test_results(self, update, context, user):
+        s = self.sessions[user]
+        pct = (s['test_score']/s['test_total']*100) if s['test_total'] > 0 else 0
+        keyboard = [[InlineKeyboardButton('Retry Test', callback_data='test'), InlineKeyboardButton('Back', callback_data='back')]]
+        await update.callback_query.edit_message_text(
+            f"TEST DONE!\n\nCorrect: {s['test_score']}/{s['test_total']}\nScore: {pct:.1f}%\n\n{'EXCELLENT!' if pct >= 70 else 'KEEP PRACTICING!'}",
+            reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown'
+        )
+
+    async def handler(self, update, context):
+        data = update.callback_query.data
+        if data == 'back': await self.start(update, context)
+        elif data == 'about': await self.about(update, context)
+        elif data == 'doubt': return await self.doubt(update, context)
+        elif data == 'progress': await self.progress(update, context)
+        elif data == 'test': await self.test(update, context)
+        elif data.startswith('sub_'): await self.show_topics(update, context, data.replace('sub_', ''))
+        elif data.startswith('topic_'): await self.start_mcq(update, context, data.replace('topic_', ''))
+        elif data.startswith('ans_'): await self.handle_ans(update, context)
+        elif data.startswith('tans_'): await self.handle_test_ans(update, context)
+        elif data.startswith('retry_'): await self.retry(update, context)
+        elif data == 'next': await self.next(update, context)
+
+def main():
+    app = Application.builder().token(TOKEN).build()
+    bot = Bot()
+    app.add_handler(CommandHandler('start', bot.start))
+    app.add_handler(CommandHandler('help', bot.start))
+    app.add_handler(ConversationHandler(
+        entry_points=[CallbackQueryHandler(bot.doubt, pattern='^doubt$')],
+        states={DOUBT_INPUT: [MessageHandler(filters.TEXT & ~filters.COMMAND, bot.handle_doubt)]},
+        fallbacks=[CommandHandler('start', bot.start)]
+    ))
+    app.add_handler(CallbackQueryHandler(bot.handler))
+    print('='*40)
+    print('CA INTER BOT v2.0 RUNNING')
+    print('Powered by: @Introspection007')
+    print('Developed by: MeNgHeaNg')
+    print('='*40)
+    app.run_polling(allowed_updates=Update.ALL_TYPES, read_timeout=10, write_timeout=10, connect_timeout=10)
+
+if __name__ == '__main__':
+    main()
