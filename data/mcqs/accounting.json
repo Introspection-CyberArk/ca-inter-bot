@@ -1,0 +1,25 @@
+{
+  "acc_1": [
+    {
+      "id": "acc_1_1",
+      "question": "Which accounting standard deals with Property, Plant and Equipment?",
+      "options": ["AS 10", "AS 16", "AS 7", "AS 19"],
+      "correct_answer": 0,
+      "explanation": "AS 10 deals with Property, Plant and Equipment. It covers depreciation and fixed assets.",
+      "hint": "Remember the standard numbers!"
+    },
+    {
+      "id": "acc_1_2",
+      "question": "What is the accounting treatment for Capital Reserve?",
+      "options": [
+        "Credited to Profit & Loss A/c",
+        "Shown in Balance Sheet as liability",
+        "Shown in Balance Sheet as Reserve & Surplus",
+        "Transferred to general reserve"
+      ],
+      "correct_answer": 2,
+      "explanation": "Capital reserve is shown under Reserves & Surplus in the Balance Sheet.",
+      "hint": "Think about where reserves are shown in Balance Sheet"
+    }
+  ]
+}
