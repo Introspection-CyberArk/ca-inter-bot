@@ -1,6 +1,0 @@
-# CA INTERMEDIATE BOT - Dependencies
-python-telegram-bot==20.3
-python-dotenv==1.0.0
-sqlalchemy==2.0.19
-requests==2.31.0
-aiohttp==3.8.5
