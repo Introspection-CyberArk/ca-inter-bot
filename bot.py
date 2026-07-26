@@ -7,14 +7,12 @@ Version: 3.0
 """
 
 import os
-import random
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 # ==================== CONFIGURATION ====================
 TOKEN = "8707473118:AAErmBRuzuU9JRR08mE4TNsGDGUWdHwVpxU"
-PORT = int(os.environ.get('PORT', 8443))
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -335,19 +333,17 @@ class CABot:
             InlineKeyboardButton("ℹ️ About", callback_data="about")
         ])
         
-        welcome = f"""
-🎓 WELCOME TO CA INTER BOT v{self.VERSION}
-
-Hey {user.first_name}! 👋
-
-I have {sum(len(mcqs) for mcqs in MCQS.values())}+ MCQs from your PDFs!
-
-Choose a subject to start practicing:
-
----
-⭐ Powered by: {self.POWERED_BY}
-🔧 Developed by: {self.CREATOR}
-"""
+        total_mcqs = sum(len(mcqs) for mcqs in MCQS.values())
+        
+        welcome = (
+            f"🎓 WELCOME TO CA INTER BOT v{self.VERSION}\n\n"
+            f"Hey {user.first_name}! 👋\n\n"
+            f"I have {total_mcqs}+ MCQs from your PDFs!\n\n"
+            f"Choose a subject to start practicing:\n\n"
+            f"---\n"
+            f"⭐ Powered by: {self.POWERED_BY}\n"
+            f"🔧 Developed by: {self.CREATOR}"
+        )
         
         await update.message.reply_text(
             welcome,
@@ -359,23 +355,21 @@ Choose a subject to start practicing:
         query = update.callback_query
         await query.answer()
         
-        about_text = f"""
-ℹ️ ABOUT THIS BOT
-
-CA Inter Exam Bot v{self.VERSION}
-
-⭐ Powered by: {self.POWERED_BY}
-🔧 Developed by: {self.CREATOR}
-
-📚 {sum(len(mcqs) for mcqs in MCQS.values())}+ MCQs
-📚 {len(self.subjects)} Subjects:
-• Auditing
-• Financial Management
-• Strategic Management
-• Costing
-
-All questions extracted from ICAI RTPs!
-"""
+        total_mcqs = sum(len(mcqs) for mcqs in MCQS.values())
+        
+        about_text = (
+            f"ℹ️ ABOUT THIS BOT\n\n"
+            f"CA Inter Exam Bot v{self.VERSION}\n\n"
+            f"⭐ Powered by: {self.POWERED_BY}\n"
+            f"🔧 Developed by: {self.CREATOR}\n\n"
+            f"📚 {total_mcqs}+ MCQs\n"
+            f"📚 {len(self.subjects)} Subjects:\n"
+            f"• Auditing\n"
+            f"• Financial Management\n"
+            f"• Strategic Management\n"
+            f"• Costing\n\n"
+            f"All questions extracted from ICAI RTPs!"
+        )
         
         await query.edit_message_text(
             about_text,
@@ -426,14 +420,12 @@ All questions extracted from ICAI RTPs!
             InlineKeyboardButton("📊 Progress", callback_data="progress")
         ])
         
-        message = f"""
-📝 {session['subject']}
-Question {session['idx'] + 1}/{session['total']}
-
-{mcq['q']}
-
-Choose your answer:
-"""
+        message = (
+            f"📝 {session['subject']}\n"
+            f"Question {session['idx'] + 1}/{session['total']}\n\n"
+            f"{mcq['q']}\n\n"
+            f"Choose your answer:"
+        )
         
         await update.callback_query.edit_message_text(
             message,
@@ -462,14 +454,4 @@ Choose your answer:
             [InlineKeyboardButton("➡️ Next Question", callback_data="next")],
             [InlineKeyboardButton("📊 Progress", callback_data="progress")]
         ]
-        
-        feedback = "✅ CORRECT!" if is_correct else "❌ INCORRECT!"
-        
-        await query.edit_message_text(
-            f"{feedback}\n\n"
-            f"Correct Answer: {mcq['opts'][mcq['ans']]}\n\n"
-            f"Explanation:\n{mcq['exp']}\n\n"
-            f"Score: {session['score']}/{session['total']}",
-            reply_markup=InlineKeyboardMarkup(keyboard),
-            parse_mode='Markdown'
-   
+ 
