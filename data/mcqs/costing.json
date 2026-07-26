@@ -1,0 +1,17 @@
+{
+  "cost_1": [
+    {
+      "id": "cost_1_1",
+      "question": "What is the formula for Break-Even Point in units?",
+      "options": [
+        "Fixed Costs / Contribution per unit",
+        "Variable Costs / Contribution per unit",
+        "Fixed Costs + Variable Costs",
+        "Total Costs / Units"
+      ],
+      "correct_answer": 0,
+      "explanation": "Break-Even Point in units = Fixed Costs / Contribution per unit",
+      "hint": "BEP = FC / CM per unit"
+    }
+  ]
+}
