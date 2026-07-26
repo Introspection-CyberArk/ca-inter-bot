@@ -1,0 +1,17 @@
+{
+  "fm_1": [
+    {
+      "id": "fm_1_1",
+      "question": "What is the objective of financial management?",
+      "options": [
+        "Profit maximization",
+        "Wealth maximization",
+        "Sales maximization",
+        "Cost minimization"
+      ],
+      "correct_answer": 1,
+      "explanation": "Wealth maximization is the primary objective of financial management as it considers the time value of money and risk.",
+      "hint": "Think about shareholder value"
+    }
+  ]
+}
