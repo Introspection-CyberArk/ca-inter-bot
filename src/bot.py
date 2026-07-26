@@ -110,7 +110,7 @@ class CAContent:
                     'question': 'Which accounting standard deals with Property, Plant and Equipment?',
                     'options': ['AS 10', 'AS 16', 'AS 7', 'AS 19'],
                     'correct_answer': 0,
-                    'explanation': 'AS 10 deals with Property, Plant and Equipment. It covers depreciation and fixed assets.',
+                    'explanation': 'AS 10 deals with Property, Plant and Equipment.',
                     'hint': 'Remember the standard numbers!'
                 },
                 {
@@ -123,21 +123,8 @@ class CAContent:
                         'Transferred to general reserve'
                     ],
                     'correct_answer': 2,
-                    'explanation': 'Capital reserve is shown under Reserves & Surplus in the Balance Sheet. It cannot be used for dividend distribution.',
-                    'hint': 'Think about where reserves are shown in Balance Sheet'
-                },
-                {
-                    'id': 'acc_1_3',
-                    'question': 'Which method is used for consolidation of financial statements?',
-                    'options': [
-                        'Equity method',
-                        'Proportionate method',
-                        'Full consolidation method',
-                        'Cost method'
-                    ],
-                    'correct_answer': 2,
-                    'explanation': 'Full consolidation method is used where the parent company has control over the subsidiary.',
-                    'hint': 'Consider which method shows complete control'
+                    'explanation': 'Capital reserve is shown under Reserves & Surplus.',
+                    'hint': 'Think about where reserves are shown'
                 }
             ],
             'law_1': [
@@ -146,22 +133,17 @@ class CAContent:
                     'question': 'Minimum number of directors required in a public company?',
                     'options': ['2', '3', '5', '7'],
                     'correct_answer': 1,
-                    'explanation': 'Section 149(1) of Companies Act 2013 requires minimum 3 directors for a public company.',
+                    'explanation': 'Section 149 requires minimum 3 directors.',
                     'hint': 'Check Companies Act 2013'
                 }
             ],
             'tax_1': [
                 {
                     'id': 'tax_1_1',
-                    'question': 'Residential status of an individual is determined based on:',
-                    'options': [
-                        'Citizenship',
-                        'Domicile',
-                        'Physical presence in India',
-                        'All of the above'
-                    ],
+                    'question': 'Residential status is determined based on:',
+                    'options': ['Citizenship', 'Domicile', 'Physical presence', 'All of the above'],
                     'correct_answer': 2,
-                    'explanation': 'Residential status depends on the number of days of physical presence in India, not citizenship.',
+                    'explanation': 'Based on physical presence in India.',
                     'hint': 'Focus on physical presence'
                 }
             ],
@@ -176,7 +158,7 @@ class CAContent:
                         'Total Costs / Units'
                     ],
                     'correct_answer': 0,
-                    'explanation': 'Break-Even Point in units = Fixed Costs / Contribution per unit',
+                    'explanation': 'BEP = Fixed Costs / Contribution per unit',
                     'hint': 'BEP = FC / CM per unit'
                 }
             ]
@@ -203,41 +185,33 @@ class CAContent:
         
         if 'depreciation' in query_lower:
             return """
-📘 **DEPRECIATION - COMPLETE EXPLANATION**
+📘 DEPRECIATION EXPLANATION
 
-**What is Depreciation?**
-Depreciation is the systematic allocation of the depreciable amount of an asset over its useful life.
+Depreciation is the systematic allocation of cost over useful life.
 
-**🔑 Key Points:**
-• Applies to tangible fixed assets
-• Based on historical cost
+Key Points:
+• Applies to fixed assets
 • Non-cash expense
-• Reduces book value
+• Methods: SLM, WDV
 
-**📊 Methods:**
-1. **Straight Line Method (SLM)** - Equal depreciation every year
-2. **Written Down Value (WDV)** - Higher depreciation in early years
-
-**💡 Example:**
-Company buys machinery for ₹1,00,000
-Useful life: 10 years
-Residual value: ₹10,000
-
-Annual Depreciation (SLM) = (1,00,000 - 10,000) / 10 = ₹9,000
+Example:
+Cost: ₹1,00,000
+Life: 10 years
+Residual: ₹10,000
+Annual Dep = (1,00,000 - 10,000) / 10 = ₹9,000
 """
         elif 'gst' in query_lower:
             return """
-📘 **GST - GOODS AND SERVICES TAX**
+📘 GST EXPLANATION
 
-**What is GST?**
-GST is a comprehensive indirect tax levied on supply of goods and services.
+GST is a comprehensive indirect tax.
 
-**🏗️ Structure:**
-• **CGST** - Central GST
-• **SGST** - State GST  
-• **IGST** - Integrated GST
+Structure:
+• CGST - Central GST
+• SGST - State GST
+• IGST - Integrated GST
 
-**📊 GST Rates:**
+Rates:
 • 5% - Essential items
 • 12% - Standard goods
 • 18% - Most services
@@ -245,24 +219,17 @@ GST is a comprehensive indirect tax levied on supply of goods and services.
 """
         else:
             return """
-📘 **CONCEPT EXPLANATION**
+📘 CONCEPT EXPLANATION
 
-I'll help you understand this CA Inter concept!
+This is an important CA Inter concept.
 
-**🔍 What is it?**
-This is an important topic in CA Intermediate syllabus.
-
-**🎯 How to Study:**
+How to Study:
 1. Read from ICAI module
 2. Practice problems
 3. Attempt MCQs
 4. Revise regularly
 
-**📝 Need specific help?**
-Ask me targeted questions like:
-• "Explain depreciation with example"
-• "What is GST and how it works?"
-• "Tell me about Section 80C"
+Ask specific questions for better explanations!
 """
     
     def find_related_mcqs(self, query):
@@ -282,14 +249,11 @@ Ask me targeted questions like:
         
         return related
 
-# ==================== DATABASE (SIMPLE VERSION) ====================
+# ==================== DATABASE ====================
 class Database:
-    """Simple database operations"""
-    
     def __init__(self):
         self.data_dir = "data"
         os.makedirs(self.data_dir, exist_ok=True)
-        self.db_file = os.path.join(self.data_dir, "ca_bot.db")
     
     def save_user(self, telegram_id, username, first_name, last_name=""):
         pass
@@ -301,9 +265,9 @@ class Database:
         pass
     
     def get_user_stats(self, user_id):
-        return {'total_questions': 0, 'total_correct': 0, 'total_wrong': 0, 'accuracy': 0}
+        return {'total_questions': 0, 'total_correct': 0}
 
-# ==================== UTILITY FUNCTIONS ====================
+# ==================== UTILITY ====================
 def calculate_accuracy(correct, total):
     if total == 0:
         return 0.0
@@ -311,20 +275,15 @@ def calculate_accuracy(correct, total):
 
 def get_performance_level(accuracy):
     if accuracy >= 80:
-        return "🌟 EXCELLENT! You're a CA star!"
+        return "🌟 EXCELLENT!"
     elif accuracy >= 60:
-        return "👍 GOOD! Keep practicing!"
+        return "👍 GOOD!"
     elif accuracy >= 40:
-        return "📖 NEEDS IMPROVEMENT. Review concepts."
+        return "📖 NEEDS IMPROVEMENT"
     else:
-        return "💪 DON'T GIVE UP! Practice more!"
+        return "💪 KEEP PRACTICING!"
 
-def validate_input(text, max_length=1000):
-    if not text or len(text) > max_length:
-        return False
-    return True
-
-# ==================== MAIN BOT CLASS ====================
+# ==================== MAIN BOT ====================
 class CABot:
     def __init__(self):
         self.content = CAContent()
@@ -349,42 +308,41 @@ class CABot:
         }
         
         welcome = f"""
-🎓 **WELCOME TO CA INTER BOT v{self.VERSION}**
+🎓 WELCOME TO CA INTER BOT v{self.VERSION}
 
 Hey {user.first_name}! 👋
 
 I'm your CA Intermediate exam preparation assistant.
 
-**📚 What I Offer:**
-• 📝 MCQ Practice with Explanations
+What I Offer:
+• 📝 MCQ Practice
 • 💡 Concept Understanding
 • 📊 Progress Tracking
-• 🎯 Weak Area Identification
 
-**Choose your subject below to start:**
+Choose your subject below:
 
 ---
-⭐ **Powered By:** {self.POWERED_BY}
-🔧 **Developed by:** {self.CREATOR}
+⭐ Powered By: {self.POWERED_BY}
+🔧 Developed by: {self.CREATOR}
 ---
 """
         
         keyboard = [
             [
                 InlineKeyboardButton("📚 Accounting", callback_data="sub_accounts"),
-                InlineKeyboardButton("⚖️ Business Law", callback_data="sub_law")
+                InlineKeyboardButton("⚖️ Law", callback_data="sub_law")
             ],
             [
                 InlineKeyboardButton("💰 Taxation", callback_data="sub_taxation"),
                 InlineKeyboardButton("📊 Costing", callback_data="sub_costing")
             ],
             [
-                InlineKeyboardButton("📋 Auditing", callback_data="sub_audit"),
+                InlineKeyboardButton("📋 Audit", callback_data="sub_audit"),
                 InlineKeyboardButton("📑 FM & SM", callback_data="sub_fm_sm")
             ],
             [
                 InlineKeyboardButton("❓ Ask Doubt", callback_data="ask_doubt"),
-                InlineKeyboardButton("📊 My Progress", callback_data="show_progress")
+                InlineKeyboardButton("📊 Progress", callback_data="show_progress")
             ],
             [
                 InlineKeyboardButton("📝 Practice Test", callback_data="practice_test"),
@@ -404,16 +362,16 @@ I'm your CA Intermediate exam preparation assistant.
         await query.answer()
         
         about_text = f"""
-ℹ️ **ABOUT THIS BOT**
+ℹ️ ABOUT THIS BOT
 
-📚 **CA Intermediate Exam Prep Bot**
+CA Intermediate Exam Prep Bot
 Version {self.VERSION}
 
-**👨‍💻 Creator:**
-**{self.CREATOR}** - Owner & Developer
-⭐ **{self.POWERED_BY}** - Project Lead
+Creator:
+{self.CREATOR} - Owner & Developer
+⭐ {self.POWERED_BY} - Project Lead
 
-**📚 Subjects Covered:**
+Subjects Covered:
 ✅ Accounting
 ✅ Business Laws
 ✅ Taxation
@@ -422,11 +380,11 @@ Version {self.VERSION}
 ✅ FM & SM
 
 ---
-⭐ **Powered By:** {self.POWERED_BY}
-🔧 **Developed with ❤️ by {self.CREATOR}**
+⭐ Powered By: {self.POWERED_BY}
+🔧 Developed by {self.CREATOR}
 """
         
-        keyboard = [[InlineKeyboardButton("🔙 Back to Main", callback_data="back_main")]]
+        keyboard = [[InlineKeyboardButton("🔙 Back", callback_data="back_main")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await query.edit_message_text(
@@ -445,10 +403,7 @@ Version {self.VERSION}
         topics = self.content.get_topics(subject_code)
         
         if not topics:
-            await query.edit_message_text(
-                f"❌ No topics available for {subject_name}",
-                parse_mode='Markdown'
-            )
+            await query.edit_message_text("No topics available.", parse_mode='Markdown')
             return
         
         keyboard = []
@@ -460,11 +415,11 @@ Version {self.VERSION}
                 )
             ])
         
-        keyboard.append([InlineKeyboardButton("🔙 Back to Main", callback_data="back_main")])
+        keyboard.append([InlineKeyboardButton("🔙 Back", callback_data="back_main")])
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await query.edit_message_text(
-            f"📚 **{subject_name}**\n\nChoose a topic to practice:",
+            f"📚 {subject_name}\n\nChoose a topic:",
             reply_markup=reply_markup,
             parse_mode='Markdown'
         )
@@ -476,10 +431,7 @@ Version {self.VERSION}
         mcqs = self.content.get_mcqs(topic_id)
         
         if not mcqs:
-            await query.edit_message_text(
-                "❌ No MCQs available for this topic yet!",
-                parse_mode='Markdown'
-            )
+            await query.edit_message_text("No MCQs available.", parse_mode='Markdown')
             return
         
         topic_name = self.content.get_topic_name(topic_id)
@@ -520,8 +472,8 @@ Version {self.VERSION}
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await update.callback_query.edit_message_text(
-            f"📚 **{topic_name}** (Q{current + 1}/{total})\n\n"
-            f"📝 **{mcq['question']}**\n\nChoose your answer:",
+            f"📚 {topic_name} (Q{current + 1}/{total})\n\n"
+            f"📝 {mcq['question']}\n\nChoose your answer:",
             reply_markup=reply_markup,
             parse_mode='Markdown'
         )
@@ -549,25 +501,99 @@ Version {self.VERSION}
             'selected': selected,
             'correct': is_correct,
             'correct_answer': mcq['correct_answer'],
-            'explanation': mcq.get('explanation', 'No explanation available'),
+            'explanation': mcq.get('explanation', 'No explanation'),
             'topic': session.get('topic_name', 'Unknown')
         })
         
-        feedback = "✅ **CORRECT!**" if is_correct else "❌ **INCORRECT!**"
+        feedback = "✅ CORRECT!" if is_correct else "❌ INCORRECT!"
         correct_answer = mcq['options'][mcq['correct_answer']]
         
         keyboard = [
-            [InlineKeyboardButton("➡️ Next Question", callback_data="next_mcq_")],
-            [
-                InlineKeyboardButton("📊 Progress", callback_data="show_progress"),
-                InlineKeyboardButton("🔙 Back", callback_data="back_main")
-            ]
+            [InlineKeyboardButton("➡️ Next", callback_data="next_mcq_")],
+            [InlineKeyboardButton("📊 Progress", callback_data="show_progress")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
         await query.edit_message_text(
             f"{feedback}\n\n"
-            f"**Correct Answer:** {correct_answer}\n\n"
-            f"**Explanation:**\n{mcq.get('explanation', 'No explanation available')}\n\n"
-            f"📊 Score: {session['score']}/{session.get('total', 0)}\n\n"
-            f"⭐ **Powere
+            f"Correct Answer: {correct_answer}\n\n"
+            f"Explanation:\n{mcq.get('explanation', 'No explanation')}\n\n"
+            f"Score: {session['score']}/{session.get('total', 0)}",
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
+        
+        session['current_mcq'] = current + 1
+    
+    async def next_mcq(self, update, context):
+        query = update.callback_query
+        user_id = query.from_user.id
+        await self.display_mcq(update, context, user_id)
+    
+    async def show_results(self, update, context, user_id):
+        session = self.user_sessions.get(user_id, {})
+        total = session.get('total', 0)
+        score = session.get('score', 0)
+        percentage = calculate_accuracy(score, total)
+        level = get_performance_level(percentage)
+        
+        result_text = f"""
+📊 QUIZ COMPLETE!
+
+Topic: {session.get('topic_name', 'Practice')}
+✅ Correct: {score}
+❌ Incorrect: {total - score}
+📈 Score: {percentage:.1f}%
+
+{level}
+"""
+        
+        keyboard = [
+            [
+                InlineKeyboardButton("🔄 Retry", callback_data=f"retry_{session.get('current_topic', '')}"),
+                InlineKeyboardButton("📚 New Subject", callback_data="back_main")
+            ]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await update.callback_query.edit_message_text(
+            result_text,
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
+    
+    async def retry_topic(self, update, context):
+        query = update.callback_query
+        user_id = query.from_user.id
+        topic_id = query.data.replace("retry_", "")
+        await self.start_mcq(update, context, topic_id)
+    
+    async def ask_doubt(self, update, context):
+        query = update.callback_query
+        await query.answer()
+        
+        await query.edit_message_text(
+            "🤔 ASK YOUR DOUBT\n\n"
+            "Type your question and I'll explain!\n\n"
+            "Examples:\n"
+            "• What is depreciation?\n"
+            "• Explain GST\n"
+            "• How does Section 80C work?\n\n"
+            "Type your question:",
+            parse_mode='Markdown'
+        )
+        return DOUBT_INPUT
+    
+    async def handle_doubt(self, update, context):
+        user_input = update.message.text
+        explanation = self.content.explain_concept(user_input)
+        related = self.content.find_related_mcqs(user_input)
+        
+        response = explanation
+        
+        if related:
+            response += "\n\n📝 Related Questions:\n"
+            for i, mcq in enumerate(related[:2], 1):
+                response += f"\n{i}. {mcq['question']}"
+        
+        keyboard = [[InlineKeyboardButton("🔙 Back
