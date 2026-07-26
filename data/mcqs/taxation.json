@@ -1,0 +1,12 @@
+{
+  "tax_1": [
+    {
+      "id": "tax_1_1",
+      "question": "Residential status of an individual is determined based on:",
+      "options": ["Citizenship", "Domicile", "Physical presence in India", "All of the above"],
+      "correct_answer": 2,
+      "explanation": "Residential status depends on the number of days of physical presence in India.",
+      "hint": "Focus on physical presence"
+    }
+  ]
+}
