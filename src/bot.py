@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CA Intermediate Exam Bot - Main Application
+CA Intermediate Exam Bot
 Created by: MeNgHeaNg
 Powered by: @Introspection007
 Version: 2.0
@@ -11,12 +11,10 @@ import sys
 import logging
 import random
 from datetime import datetime
-from typing import Dict, List, Optional, Any
 
-# Add parent directory to path for imports
+# Add parent directory to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# Telegram imports
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
@@ -28,13 +26,9 @@ from telegram.ext import (
     ConversationHandler
 )
 
-# ==================== CONFIGURATION ====================
+# ==================== CONFIG ====================
 class Config:
-    """Bot configuration"""
     TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN', '8707473118:AAErmBRuzuU9JRR08mE4TNsGDGUWdHwVpxU')
-    DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///data/ca_bot.db')
-    ENVIRONMENT = os.getenv('ENVIRONMENT', 'production')
-    DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
     VERSION = "2.0"
     CREATOR = "MeNgHeaNg"
     POWERED_BY = "@Introspection007"
@@ -46,60 +40,44 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ==================== CONSTANTS ====================
-(SUBJECT, TOPIC, DOUBT_INPUT, TEST_MODE) = range(4)
+# ==================== STATES ====================
+DOUBT_INPUT = 1
 
 # ==================== CA CONTENT ====================
 class CAContent:
-    """Complete CA Intermediate content database"""
-    
     def __init__(self):
         self.subjects = {
             'accounts': '📚 Accounting',
             'law': '⚖️ Business Laws', 
             'taxation': '💰 Taxation',
-            'costing': '📊 Cost & Management Accounting',
+            'costing': '📊 Costing',
             'audit': '📋 Auditing',
-            'fm_sm': '📑 Financial Management & Strategic Management'
+            'fm_sm': '📑 FM & SM'
         }
         
         self.topics = {
             'accounts': [
                 {'id': 'acc_1', 'name': 'Accounting Standards', 'emoji': '📖'},
                 {'id': 'acc_2', 'name': 'Company Accounts', 'emoji': '🏢'},
-                {'id': 'acc_3', 'name': 'Consolidation', 'emoji': '📊'},
-                {'id': 'acc_4', 'name': 'Partnership Accounts', 'emoji': '🤝'},
-                {'id': 'acc_5', 'name': 'Financial Statements', 'emoji': '📈'}
+                {'id': 'acc_3', 'name': 'Consolidation', 'emoji': '📊'}
             ],
             'law': [
                 {'id': 'law_1', 'name': 'Company Law', 'emoji': '🏛️'},
-                {'id': 'law_2', 'name': 'Contract Law', 'emoji': '📜'},
-                {'id': 'law_3', 'name': 'Negotiable Instruments', 'emoji': '💳'},
-                {'id': 'law_4', 'name': 'LLP Law', 'emoji': '🤝'}
+                {'id': 'law_2', 'name': 'Contract Law', 'emoji': '📜'}
             ],
             'taxation': [
                 {'id': 'tax_1', 'name': 'Income Tax Basics', 'emoji': '💵'},
-                {'id': 'tax_2', 'name': 'TDS & TCS', 'emoji': '💰'},
-                {'id': 'tax_3', 'name': 'GST', 'emoji': '🛒'},
-                {'id': 'tax_4', 'name': 'Filing Returns', 'emoji': '📋'}
+                {'id': 'tax_2', 'name': 'GST', 'emoji': '🛒'}
             ],
             'costing': [
                 {'id': 'cost_1', 'name': 'Cost Sheet', 'emoji': '📊'},
-                {'id': 'cost_2', 'name': 'BEP Analysis', 'emoji': '📈'},
-                {'id': 'cost_3', 'name': 'Standard Costing', 'emoji': '🎯'},
-                {'id': 'cost_4', 'name': 'Budgeting', 'emoji': '📅'}
+                {'id': 'cost_2', 'name': 'BEP Analysis', 'emoji': '📈'}
             ],
             'audit': [
-                {'id': 'aud_1', 'name': 'Audit Planning', 'emoji': '📋'},
-                {'id': 'aud_2', 'name': 'Internal Audit', 'emoji': '🔍'},
-                {'id': 'aud_3', 'name': 'Statutory Audit', 'emoji': '✅'},
-                {'id': 'aud_4', 'name': 'Audit Report', 'emoji': '📄'}
+                {'id': 'aud_1', 'name': 'Audit Planning', 'emoji': '📋'}
             ],
             'fm_sm': [
-                {'id': 'fm_1', 'name': 'Financial Management', 'emoji': '💹'},
-                {'id': 'fm_2', 'name': 'Working Capital', 'emoji': '🔄'},
-                {'id': 'fm_3', 'name': 'Strategic Management', 'emoji': '🎯'},
-                {'id': 'fm_4', 'name': 'Corporate Governance', 'emoji': '🏢'}
+                {'id': 'fm_1', 'name': 'Financial Management', 'emoji': '💹'}
             ]
         }
         
@@ -111,7 +89,7 @@ class CAContent:
                     'options': ['AS 10', 'AS 16', 'AS 7', 'AS 19'],
                     'correct_answer': 0,
                     'explanation': 'AS 10 deals with Property, Plant and Equipment.',
-                    'hint': 'Remember the standard numbers!'
+                    'hint': 'Remember the standard numbers'
                 },
                 {
                     'id': 'acc_1_2',
@@ -596,4 +574,55 @@ Topic: {session.get('topic_name', 'Practice')}
             for i, mcq in enumerate(related[:2], 1):
                 response += f"\n{i}. {mcq['question']}"
         
-        keyboard = [[InlineKeyboardButton("🔙 Back
+        keyboard = [[InlineKeyboardButton("🔙 Back", callback_data="back_main")]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await update.message.reply_text(
+            response,
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
+        
+        return ConversationHandler.END
+    
+    async def show_progress(self, update, context):
+        query = update.callback_query
+        user_id = query.from_user.id
+        session = self.user_sessions.get(user_id, {})
+        
+        history = session.get('history', [])
+        total = len(history)
+        
+        if total == 0:
+            await query.edit_message_text(
+                "📊 NO DATA YET!\n\nStart practicing to track progress.",
+                parse_mode='Markdown'
+            )
+            return
+        
+        correct = sum(1 for h in history if h['correct'])
+        percentage = calculate_accuracy(correct, total)
+        
+        progress_text = f"""
+📊 YOUR PROGRESS
+
+Total Questions: {total}
+✅ Correct: {correct}
+❌ Incorrect: {total - correct}
+📈 Accuracy: {percentage:.1f}%
+"""
+        
+        keyboard = [[InlineKeyboardButton("📝 Practice More", callback_data="back_main")]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        
+        await query.edit_message_text(
+            progress_text,
+            reply_markup=reply_markup,
+            parse_mode='Markdown'
+        )
+    
+    async def practice_test(self, update, context):
+        query = update.callback_query
+        await query.answer()
+        
+        u
