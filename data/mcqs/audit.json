@@ -1,0 +1,17 @@
+{
+  "aud_1": [
+    {
+      "id": "aud_1_1",
+      "question": "What is the primary objective of an audit?",
+      "options": [
+        "To detect fraud",
+        "To express an opinion on financial statements",
+        "To prepare financial statements",
+        "To manage the company"
+      ],
+      "correct_answer": 1,
+      "explanation": "The primary objective of an audit is to express an opinion on whether the financial statements are prepared in accordance with applicable framework.",
+      "hint": "Think about the auditor's report"
+    }
+  ]
+}
